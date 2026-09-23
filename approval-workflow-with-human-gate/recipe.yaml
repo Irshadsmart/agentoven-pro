@@ -1,0 +1,77 @@
+# Generated from config.py
+# Last Updated: generate_recipe_yaml.py
+# Edit config.py and run: python generate_recipe_yaml.py
+
+name: approval-workflow-with-human-gate
+version: v1.0.0
+description: |
+  A comprehensive 5-step workflow with human approval gate.
+Steps include input collection, analysis, draft generation, human review approval,
+and conditional finalization based on human decision. Perfect for document review,
+approval workflows, and quality assurance pipelines.
+
+metadata:
+  author: AgentOven Team
+  tags:
+    - human-gate, approval, workflow, multi-step
+
+steps:
+  # STEP 1: Collect User Input
+  - id: collect-input
+    type: agent
+    agent: hello-agent-final
+    title: "Collect User Input"
+    description: "Collects and processes the initial user input for the workflow."
+    input:
+      prompt: "Process the user input: {{input.user_text}}"
+
+  # STEP 2: Analyze Request
+  - id: analyze
+    type: agent
+    agent: hello-agent-final
+    title: "Analyze Request"
+    description: "Analyzes the collected input to understand the requirements and context."
+    input:
+      prompt: "Analyze and understand this request: {{steps.collect-input.output}}"
+
+  # STEP 3: Generate Draft
+  - id: generate-draft
+    type: agent
+    agent: hello-agent-final
+    title: "Generate Draft"
+    description: "Generates a draft response or document based on the analysis."
+    input:
+      prompt: "Based on this analysis, generate a comprehensive draft: {{steps.analyze.output}}"
+
+  # STEP 4: Human Approval Review (HUMAN GATE)
+  - id: human-approval
+    type: human_gate
+    title: "Human Approval Review"
+    description: "Presents the draft to a human reviewer for approval or rejection decision."
+    message: |
+      Please review the following draft and decide to approve or reject:
+
+{{steps.generate-draft.output}}
+    timeout: 3600
+    actions:
+      - id: approve
+        label: "Approve"
+        description: "Approve the draft and proceed to finalization"
+      - id: reject
+        label: "Reject"
+        description: "Reject the draft and generate summary"
+
+  # STEP 5: Finalize Response
+  - id: finalize
+    type: agent
+    agent: hello-agent-final
+    title: "Finalize Response"
+    description: "Completes the workflow based on the human approval decision."
+    input:
+      prompt: |
+        {% if steps.human-approval.action == 'approve' %}
+        The draft has been APPROVED. Please finalize and polish it for delivery:
+{{steps.generate-draft.output}}
+        {% else %}
+        The draft has been REJECTED. Please provide a professional failure/rejection summary.
+        {% endif %}

@@ -1,0 +1,41 @@
+name: five-step-human-gate-recipe
+description: A comprehensive 5-step workflow with human approval gate. Steps include input collection, analysis, draft generation, human review approval, and conditional finalization based on human decision.
+
+steps:
+  - id: collect-input
+    type: agent
+    agent: hello-agent-final
+    input:
+      prompt: "Process the user input: {{input.user_text}}"
+
+  - id: analyze
+    type: agent
+    agent: hello-agent-final
+    input:
+      prompt: "Analyze this: {{steps.collect-input.output}}"
+
+  - id: generate-draft
+    type: agent
+    agent: hello-agent-final
+    input:
+      prompt: "Generate draft from: {{steps.analyze.output}}"
+
+  - id: human-approval
+    type: human_gate
+    message: "Review and approve:\n{{steps.generate-draft.output}}"
+    actions:
+      - id: approve
+        label: "Approve"
+      - id: reject
+        label: "Reject"
+
+  - id: finalize
+    type: agent
+    agent: hello-agent-final
+    input:
+      prompt: |
+        {% if steps.human-approval.action == 'approve' %}
+        Finalize approved content: {{steps.generate-draft.output}}
+        {% else %}
+        Provide rejection summary
+        {% endif %}

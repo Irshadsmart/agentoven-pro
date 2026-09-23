@@ -1,0 +1,153 @@
+# ============================================================================
+# AGENTOVEN CONFIGURATION - MODIFY THIS FILE TO CHANGE AGENTS & RECIPES
+# ============================================================================
+# This is the MASTER configuration file for all agent and recipe definitions.
+# Change values here and they'll automatically apply to all scripts.
+#
+# TO CREATE A NEW AGENT/RECIPE:
+#   1. Change the values in this file
+#   2. Run: python register_recipe.py
+#   3. Run: python run_recipe_workflow.py
+# ============================================================================
+
+# AGENT CONFIGURATION
+# ==================
+agent:
+  # Agent name - change this to create/use a different agent
+  name: "hello-agent-final"
+
+  # Agent description - displayed in UI
+  description: "A friendly assistant that helps with various tasks"
+
+  # Model provider - must match your configured provider
+  model_provider: "my-openai"
+
+  # Model name - must match your provider's models
+  model_name: "gpt-5"
+
+  # System prompt - instructions for the agent
+  system_prompt: "You are a helpful and professional assistant. Always be clear, concise, and provide well-structured responses. When processing requests, analyze thoroughly and provide thoughtful outputs."
+
+  # Environment where agent is baked
+  environment: "Prod"
+
+# RECIPE CONFIGURATION
+# ====================
+recipe:
+  # Recipe name - change this to create a new recipe
+  name: "five-step-human-gate-recipe"
+
+  # Recipe version
+  version: "v1.0.0"
+
+  # Recipe description - appears in DishShelf
+  description: "A comprehensive 5-step workflow with human approval gate. Steps include input collection, analysis, draft generation, human review approval, and conditional finalization based on human decision. Perfect for document review, approval workflows, and quality assurance pipelines."
+
+  # Author info
+  author: "AgentOven Team"
+
+  # Recipe tags (for categorization)
+  tags:
+    - human-gate
+    - approval
+    - workflow
+    - multi-step
+
+  # Environment where recipe is baked
+  environment: "Prod"
+
+# STEP DEFINITIONS
+# ================
+# These define the 5 steps in your recipe. Change these as needed.
+steps:
+
+  # STEP 1: Input Collection
+  step_1:
+    id: "collect-input"
+    type: "agent"
+    title: "Collect User Input"
+    description: "Collects and processes the initial user input for the workflow."
+    agent: "{{agent.name}}"  # Uses agent name from above
+    prompt: "Process the user input: {{input.user_text}}"
+
+  # STEP 2: Analysis
+  step_2:
+    id: "analyze"
+    type: "agent"
+    title: "Analyze Request"
+    description: "Analyzes the collected input to understand the requirements and context."
+    agent: "{{agent.name}}"  # Uses agent name from above
+    prompt: "Analyze and understand this request: {{steps.collect-input.output}}"
+
+  # STEP 3: Draft Generation
+  step_3:
+    id: "generate-draft"
+    type: "agent"
+    title: "Generate Draft"
+    description: "Generates a draft response or document based on the analysis."
+    agent: "{{agent.name}}"  # Uses agent name from above
+    prompt: "Based on this analysis, generate a comprehensive draft: {{steps.analyze.output}}"
+
+  # STEP 4: Human Gate (Approval/Rejection)
+  step_4:
+    id: "human-approval"
+    type: "human_gate"
+    title: "Human Approval Review"
+    description: "Presents the draft to a human reviewer for approval or rejection decision."
+    message: "Please review the following draft and decide to approve or reject:\n\n{{steps.generate-draft.output}}"
+    timeout: 3600  # seconds
+    actions:
+      - id: "approve"
+        label: "Approve"
+        description: "Approve the draft and proceed to finalization"
+      - id: "reject"
+        label: "Reject"
+        description: "Reject the draft and generate summary"
+
+  # STEP 5: Finalization (Conditional)
+  step_5:
+    id: "finalize"
+    type: "agent"
+    title: "Finalize Response"
+    description: "Completes the workflow based on the human approval decision."
+    agent: "{{agent.name}}"  # Uses agent name from above
+    prompt_if_approved: "The draft has been APPROVED. Please finalize and polish it for delivery:\n{{steps.generate-draft.output}}"
+    prompt_if_rejected: "The draft has been REJECTED. Please provide a professional failure/rejection summary."
+
+# TEST CONFIGURATION
+# ==================
+# These are used when running the recipe for testing
+test:
+  # Sample input for testing
+  sample_input:
+    user_text: "What is the capital of France?"
+
+  # Approval decision (for automated testing: "approve" or "reject")
+  # Leave empty for manual approval in UI
+  test_decision: ""
+
+# ============================================================================
+# EXAMPLES FOR FUTURE USE
+# ============================================================================
+#
+# To create a new recipe tomorrow, simply change the values above:
+#
+# EXAMPLE 1: Document Review Recipe
+#   recipe.name: "document-review-pipeline"
+#   recipe.description: "Comprehensive document review workflow..."
+#   steps.step_3.title: "Generate Review Report"
+#
+# EXAMPLE 2: Customer Support Recipe
+#   agent.name: "customer-support-agent"
+#   recipe.name: "customer-support-workflow"
+#   steps.step_1.title: "Classify Support Request"
+#   steps.step_3.title: "Generate Solution"
+#
+# EXAMPLE 3: Content Moderation Recipe
+#   recipe.name: "content-moderation-pipeline"
+#   steps.step_2.title: "Analyze Content Safety"
+#   steps.step_4.title: "Moderator Review"
+#
+# Just update the CONFIG.yaml and all scripts will use the new values!
+#
+# ============================================================================
